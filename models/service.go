@@ -14,12 +14,12 @@ func DumpServices(user, password, host string, port int) error {
 		"kpis",
 	}
 
-	base := NewBase("", "itoa_interface", "service", auditList)
+	base := NewBase("", "", "itoa_interface", "service")
 	items, err := base.Dump(user, password, host, port)
 	if err != nil {
 		return err
 	}
-	err = base.auditLog(items)
+	err = base.auditLog(items, auditList)
 	if err != nil {
 		return err
 	}

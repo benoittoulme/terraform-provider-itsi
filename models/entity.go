@@ -10,12 +10,12 @@ func DumpEntities(user, password, host string, port int) error {
 		"informational",
 		"identifying_name",
 	}
-	base := NewBase("", "itoa_interface", "entity", auditList)
+	base := NewBase("", "", "itoa_interface", "entity")
 	items, err := base.Dump(user, password, host, port)
 	if err != nil {
 		return err
 	}
-	err = base.auditLog(items)
+	err = base.auditLog(items, auditList)
 	if err != nil {
 		return err
 	}

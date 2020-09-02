@@ -6,12 +6,15 @@ func DumpBaseServiceTemplates(user, password, host string, port int) error {
 		"identifying_name",
 		"kpis",
 	}
-	base := NewBase("", "itoa_interface", "base_service_template", auditList)
+	base := NewBase("", "", "itoa_interface", "base_service_template")
+	base.TFIDField = func() string {
+		return "title"
+	}
 	items, err := base.Dump(user, password, host, port)
 	if err != nil {
 		return err
 	}
-	err = base.auditLog(items)
+	err = base.auditLog(items, auditList)
 	if err != nil {
 		return err
 	}
