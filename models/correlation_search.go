@@ -15,19 +15,20 @@ func DumpCorrelationSearches(user, password, host string, port int) error {
 		"name",
 		"search",
 	}
-	c := CorrelationSearch{
-		Base: NewBase("", "", "event_management_interface", "correlation_search"),
-	}
-	c.RESTKeyField = func() string {
+	b := NewBase("", "", "event_management_interface", "correlation_search")
+	b.RESTKeyField = func() string {
 		return "name"
 	}
-	items, err := c.Dump(user, password, host, port)
+	b.TFIDField = func() string {
+		return "name"
+	}
+	items, err := b.Dump(user, password, host, port)
 	if err != nil {
 		return err
 	}
-	err = c.auditLog(items, auditList)
+	err = b.auditLog(items, auditList)
 	if err != nil {
 		return err
 	}
-	return c.auditFields(items)
+	return b.auditFields(items)
 }

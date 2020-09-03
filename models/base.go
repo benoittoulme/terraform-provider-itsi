@@ -20,37 +20,36 @@ func init() {
 
 type Base struct {
 	// key used to collect this resource via the REST API
-	key          string
+	RESTKey      string
 	RESTKeyField func() string
 	// Terraform Identifier
-	id            string
+	TFID          string
 	TFIDField     func() string
 	restInterface string
 	objectType    string
-	rawJson       map[string]*json.RawMessage
+	RawJson       json.RawMessage
 	auditList     []string
 	fields        []string
 }
 
 func NewBase(key, id, restInterface, objectType string) *Base {
 	b := &Base{
-		key:           key,
-		id:            id,
+		RESTKey:       key,
+		TFID:          id,
 		restInterface: restInterface,
 		objectType:    objectType,
-		rawJson:       map[string]*json.RawMessage{},
 	}
 	b.RESTKeyField = func() string {
 		return "_key"
 	}
 	b.TFIDField = func() string {
-		return "name"
+		return "_key"
 	}
 	return b
 }
 
 // func (b *Base) GetValue(field string, out interface{}) error {
-// 	if v, ok := b.rawJson[field]; ok {
+// 	if v, ok := b.RawJson[field]; ok {
 // 		by, err := v.MarshalJSON()
 // 		if err != nil {
 // 			return err
@@ -71,7 +70,7 @@ func NewBase(key, id, restInterface, objectType string) *Base {
 // 	if err != nil {
 // 		return err
 // 	}
-// 	b.rawJson[field] = raw
+// 	b.RawJson[field] = raw
 // 	return nil
 // }
 
@@ -82,7 +81,7 @@ func (b *Base) Clone() *Base {
 		auditList:     b.auditList,
 		restInterface: b.restInterface,
 		objectType:    b.objectType,
-		rawJson:       b.rawJson,
+		RawJson:       b.RawJson,
 	}
 	return b_
 }
@@ -96,11 +95,10 @@ func (b *Base) Transport(host string) *http.Transport {
 }
 
 func (b *Base) Create(user, password, host string, port int) error {
-	reqBody, err := json.Marshal(b.rawJson)
+	reqBody, err := json.Marshal(b.RawJson)
 	if err != nil {
 		return err
 	}
-
 	client := &http.Client{Transport: b.Transport(host)}
 	url := fmt.Sprintf("https://%[1]s:%[2]d/servicesNS/nobody/SA-ITOA/%[3]s/%[4]s", host, port, b.restInterface, b.objectType)
 	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(reqBody))
@@ -108,6 +106,7 @@ func (b *Base) Create(user, password, host string, port int) error {
 		return err
 	}
 	req.SetBasicAuth(user, password)
+	req.Header.Add("Content-Type", "application/json")
 	resp, err := client.Do(req)
 	if err != nil {
 		return err
@@ -126,44 +125,48 @@ func (b *Base) Create(user, password, host string, port int) error {
 	return nil
 }
 
-func (b *Base) Read(user, password, host string, port int) error {
+func (b *Base) Read(user, password, host string, port int) (*Base, error) {
 	client := &http.Client{Transport: b.Transport(host)}
-	url := fmt.Sprintf("https://%[1]s:%[2]d/servicesNS/nobody/SA-ITOA/%[3]s/%[4]s/%[5]s", host, port, b.restInterface, b.objectType, b.key)
+	url := fmt.Sprintf("https://%[1]s:%[2]d/servicesNS/nobody/SA-ITOA/%[3]s/%[4]s/%[5]s", host, port, b.restInterface, b.objectType, b.RESTKey)
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	req.SetBasicAuth(user, password)
 	resp, err := client.Do(req)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer resp.Body.Close()
+	if resp.StatusCode != 200 {
+		return nil, nil
+	}
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	err = json.Unmarshal(body, &b.rawJson)
+	var raw json.RawMessage
+	err = json.Unmarshal(body, &raw)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	err = b.Populate()
+	base := b.Clone()
+	err = base.Populate(raw)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	b.storeCache()
-	return nil
+	base.storeCache()
+	return base, nil
 }
 
 func (b *Base) Update(user, password, host string, port int) error {
-
-	reqBody, err := json.Marshal(b.rawJson)
+	reqBody, err := json.Marshal(b.RawJson)
 	if err != nil {
 		return err
 	}
 
 	client := &http.Client{Transport: b.Transport(host)}
-	url := fmt.Sprintf("https://%[1]s:%[2]d/servicesNS/nobody/SA-ITOA/%[3]s/%[4]s/%[5]s", host, port, b.restInterface, b.objectType, b.key)
+	url := fmt.Sprintf("https://%[1]s:%[2]d/servicesNS/nobody/SA-ITOA/%[3]s/%[4]s/%[5]s", host, port, b.restInterface, b.objectType, b.RESTKey)
 	req, err := http.NewRequest(http.MethodPut, url, bytes.NewBuffer(reqBody))
 	if err != nil {
 		return err
@@ -188,8 +191,9 @@ func (b *Base) Update(user, password, host string, port int) error {
 }
 
 func (b *Base) Delete(user, password, host string, port int) error {
+	b.deleteCache()
 	client := &http.Client{Transport: b.Transport(host)}
-	url := fmt.Sprintf("https://%[1]s:%[2]d/servicesNS/nobody/SA-ITOA/%[3]s/%[4]s/%[5]s", host, port, b.restInterface, b.objectType, b.key)
+	url := fmt.Sprintf("https://%[1]s:%[2]d/servicesNS/nobody/SA-ITOA/%[3]s/%[4]s/%[5]s", host, port, b.restInterface, b.objectType, b.RESTKey)
 	req, err := http.NewRequest(http.MethodDelete, url, nil)
 	if err != nil {
 		return err
@@ -209,12 +213,11 @@ func (b *Base) Delete(user, password, host string, port int) error {
 
 		return fmt.Errorf("delete error: %v \n%s\n", resp.Status, body)
 	}
-	b.storeDelete()
 	return nil
 }
 
 func (b *Base) storeCache() {
-	if b.id == "" {
+	if b.TFID == "" {
 		return
 	}
 	if _, ok := cache[b.restInterface]; !ok {
@@ -223,11 +226,11 @@ func (b *Base) storeCache() {
 	if _, ok := cache[b.restInterface][b.objectType]; !ok {
 		cache[b.restInterface][b.objectType] = map[string]*Base{}
 	}
-	cache[b.restInterface][b.objectType][b.id] = b
+	cache[b.restInterface][b.objectType][b.TFID] = b
 }
 
 func (b *Base) getCache() *Base {
-	if b.id == "" {
+	if b.TFID == "" {
 		return nil
 	}
 	if _, ok := cache[b.restInterface]; !ok {
@@ -236,15 +239,15 @@ func (b *Base) getCache() *Base {
 	if _, ok := cache[b.restInterface][b.objectType]; !ok {
 		return nil
 	}
-	if b_, ok := cache[b.restInterface][b.objectType][b.id]; ok {
+	if b_, ok := cache[b.restInterface][b.objectType][b.TFID]; ok {
 		return b_
 	} else {
 		return nil
 	}
 }
 
-func (b *Base) storeDelete() {
-	if b.id == "" {
+func (b *Base) deleteCache() {
+	if b.TFID == "" {
 		return
 	}
 	if _, ok := cache[b.restInterface]; !ok {
@@ -253,14 +256,10 @@ func (b *Base) storeDelete() {
 	if _, ok := cache[b.restInterface][b.objectType]; !ok {
 		return
 	}
-	delete(cache[b.restInterface][b.objectType], b.id)
+	delete(cache[b.restInterface][b.objectType], b.TFID)
 }
 
 func (b *Base) Find(user, password, host string, port int) (*Base, error) {
-	if b.key != "" {
-		err := b.Read(user, password, host, port)
-		return b, err
-	}
 	b_ := b.getCache()
 	if b_ != nil {
 		return b_, nil
@@ -269,7 +268,11 @@ func (b *Base) Find(user, password, host string, port int) (*Base, error) {
 	if err != nil {
 		return nil, err
 	}
-	return b.getCache(), nil
+	b_ = b.getCache()
+	if b_ != nil {
+		return b_, nil
+	}
+	return b_, nil
 }
 
 func (b *Base) Dump(user, password, host string, port int) ([]*Base, error) {
@@ -289,7 +292,7 @@ func (b *Base) Dump(user, password, host string, port int) ([]*Base, error) {
 	if err != nil {
 		return nil, err
 	}
-	var raw []map[string]*json.RawMessage
+	var raw []json.RawMessage
 	err = json.Unmarshal(body, &raw)
 	if err != nil {
 		return nil, err
@@ -297,8 +300,7 @@ func (b *Base) Dump(user, password, host string, port int) ([]*Base, error) {
 	res := []*Base{}
 	for _, r := range raw {
 		b_ := b.Clone()
-		b_.rawJson = r
-		err = b_.Populate()
+		err = b_.Populate(r)
 		if err != nil {
 			return nil, err
 		}
@@ -306,40 +308,47 @@ func (b *Base) Dump(user, password, host string, port int) ([]*Base, error) {
 		res = append(res, b_)
 	}
 	sort.Slice(res, func(i, j int) bool {
-		return res[i].key < res[j].key
+		return res[i].RESTKey < res[j].RESTKey
 	})
 	return res, err
 }
 
-func (b *Base) Populate() error {
-	key := b.RESTKeyField()
-	if _, ok := b.rawJson[key]; !ok {
-		fmt.Println(b.rawJson)
-		return fmt.Errorf("missing %s field for %s", key, b.objectType)
-	}
-	keyBytes, err := b.rawJson[key].MarshalJSON()
+func (b *Base) Populate(raw []byte) error {
+	err := json.Unmarshal(raw, &b.RawJson)
 	if err != nil {
 		return err
 	}
-	err = json.Unmarshal(keyBytes, &b.key)
+	var fieldsMap map[string]*json.RawMessage
+	err = json.Unmarshal(raw, &fieldsMap)
+	if err != nil {
+		return err
+	}
+	key := b.RESTKeyField()
+	if _, ok := fieldsMap[key]; !ok {
+		return fmt.Errorf("missing %s RESTKey field for %s", key, b.objectType)
+	}
+	keyBytes, err := fieldsMap[key].MarshalJSON()
+	if err != nil {
+		return err
+	}
+	err = json.Unmarshal(keyBytes, &b.RESTKey)
 	if err != nil {
 		return err
 	}
 	id := b.TFIDField()
-	if _, ok := b.rawJson[id]; !ok {
-		fmt.Println(b.rawJson)
-		return fmt.Errorf("missing %s field for %s", id, b.objectType)
+	if _, ok := fieldsMap[id]; !ok {
+		return fmt.Errorf("missing %s TFID field for %s", id, b.objectType)
 	}
-	idBytes, err := b.rawJson[id].MarshalJSON()
+	idBytes, err := fieldsMap[id].MarshalJSON()
 	if err != nil {
 		return err
 	}
-	err = json.Unmarshal(idBytes, &b.id)
+	err = json.Unmarshal(idBytes, &b.TFID)
 	if err != nil {
 		return err
 	}
 	b.fields = []string{}
-	for field := range b.rawJson {
+	for field := range fieldsMap {
 		b.fields = append(b.fields, field)
 	}
 	sort.Strings(b.fields)
@@ -354,15 +363,23 @@ func (b *Base) auditLog(items []*Base, auditList []string) error {
 		auditMap[f] = true
 	}
 	for _, item := range items {
-		rawJson := item.rawJson
+		by, err := json.Marshal(item.RawJson)
+		if err != nil {
+			return err
+		}
+		var auditBody map[string]*json.RawMessage
+		err = json.Unmarshal(by, &auditBody)
+		if err != nil {
+			return err
+		}
 		if len(auditMap) > 0 {
-			for f := range rawJson {
+			for f := range auditBody {
 				if _, ok := auditMap[f]; !ok {
-					delete(rawJson, f)
+					delete(auditBody, f)
 				}
 			}
 		}
-		by, err := json.Marshal(rawJson)
+		by, err = json.Marshal(auditBody)
 		if err != nil {
 			return err
 		}
