@@ -1,3 +1,9 @@
-bin/*
-dump/*
-fields/*
+/bin
+/dump
+/fields
+.DS_Store
+pkg
+tmp
+.terraform
+terraform.tfstate
+terraform.tfstate.backup
