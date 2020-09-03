@@ -316,21 +316,6 @@ func thresholdRead(threshold_data map[string]interface{}) interface{} {
 	return []interface{}{threshold}
 }
 
-// thresholdLevels := []interface{}{}
-// for _, h_ := range source[""].(*schema.Set).List() {
-// 	h := h_.(map[string]interface{})
-// 	thresholdLevel := map[string]interface{}{}
-// 	thresholdLevel[""] = h[""].(string)
-// 	thresholdLevel[""] = h[""].(string)
-// 	thresholdLevel[""] = h[""].(string)
-// 	thresholdLevel[""] = h[""].(string)
-// 	thresholdLevel[""] = h[""].(int)
-// 	thresholdLevel[""] = h[""].(int)
-// 	thresholdLevels = append(thresholdLevels, thresholdLevel)
-// }
-// threshold["thresholdLevels"] = thresholdLevels
-// return threshold, nil
-
 func kpiThresholdTemplateRead(d *schema.ResourceData, m interface{}) error {
 	client := m.(client)
 
@@ -345,6 +330,7 @@ func kpiThresholdTemplateRead(d *schema.ResourceData, m interface{}) error {
 	}
 	return populate(b, d)
 }
+
 func populate(b *models.Base, d *schema.ResourceData) error {
 	by, err := b.RawJson.MarshalJSON()
 	if err != nil {
