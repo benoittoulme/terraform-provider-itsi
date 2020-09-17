@@ -2,13 +2,13 @@ package models
 
 func DumpEntities(user, password, host string, port int) error {
 	auditList := []string{
-		"title",
-		"services",
-		"entity",
-		"mod_timestamp",
-		"description",
-		"informational",
-		"identifying_name",
+		// "title",
+		// "services",
+		// "entity",
+		// "mod_timestamp",
+		// "description",
+		// "informational",
+		// "identifying_name",
 	}
 	base := NewBase("", "", "itoa_interface", "entity")
 	items, err := base.Dump(user, password, host, port)

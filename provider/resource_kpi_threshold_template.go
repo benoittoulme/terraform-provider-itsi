@@ -113,6 +113,11 @@ func resourceKPIThresholdTemplate() *schema.Resource {
 			State: kpiThresholdTemplateImport,
 		},
 		Schema: map[string]*schema.Schema{
+			"_key": {
+				Type:         schema.TypeString,
+				Optional:     true,
+				InputDefault: "",
+			},
 			"title": {
 				Type:     schema.TypeString,
 				Required: true,
@@ -226,7 +231,7 @@ func threshold(source map[string]interface{}) (interface{}, error) {
 	return threshold, nil
 }
 
-func kPIThresholdTemplate(d *schema.ResourceData) (config *models.Base, err error) {
+func kpiThresholdTemplate(d *schema.ResourceData) (config *models.Base, err error) {
 	body := map[string]interface{}{}
 	body["objectType"] = "kpi_threshold_template"
 	body["title"] = d.Get("title").(string)
@@ -279,7 +284,7 @@ func kPIThresholdTemplate(d *schema.ResourceData) (config *models.Base, err erro
 
 func kpiThresholdTemplateCreate(d *schema.ResourceData, m interface{}) error {
 	client := m.(client)
-	template, err := kPIThresholdTemplate(d)
+	template, err := kpiThresholdTemplate(d)
 	if err != nil {
 		return err
 	}
@@ -341,6 +346,7 @@ func populate(b *models.Base, d *schema.ResourceData) error {
 	if err != nil {
 		return err
 	}
+	err = d.Set("_key", interfaceMap["_key"])
 	err = d.Set("title", interfaceMap["title"])
 	if err != nil {
 		return err
@@ -399,7 +405,7 @@ func kpiThresholdTemplateUpdate(d *schema.ResourceData, m interface{}) error {
 		return kpiThresholdTemplateCreate(d, m)
 	}
 
-	template, err := kPIThresholdTemplate(d)
+	template, err := kpiThresholdTemplate(d)
 	if err != nil {
 		return err
 	}

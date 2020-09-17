@@ -35,6 +35,7 @@ func Provider() *schema.Provider {
 		},
 		ResourcesMap: map[string]*schema.Resource{
 			"itsi_kpi_threshold_template": resourceKPIThresholdTemplate(),
+			// "kpi_base_search":             resourceKPIBaseSearch(),
 		},
 	}
 }

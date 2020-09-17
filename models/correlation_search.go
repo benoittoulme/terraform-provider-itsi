@@ -6,14 +6,14 @@ type CorrelationSearch struct {
 
 func DumpCorrelationSearches(user, password, host string, port int) error {
 	auditList := []string{
-		"cron_schedule",
-		"description",
-		"disabled",
-		"is_scheduled",
-		"is_visible",
-		"max_concurrent",
-		"name",
-		"search",
+		// "cron_schedule",
+		// "description",
+		// "disabled",
+		// "is_scheduled",
+		// "is_visible",
+		// "max_concurrent",
+		// "name",
+		// "search",
 	}
 	b := NewBase("", "", "event_management_interface", "correlation_search")
 	b.RESTKeyField = func() string {
