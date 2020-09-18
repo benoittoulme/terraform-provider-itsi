@@ -113,11 +113,6 @@ func resourceKPIThresholdTemplate() *schema.Resource {
 			State: kpiThresholdTemplateImport,
 		},
 		Schema: map[string]*schema.Schema{
-			"_key": {
-				Type:         schema.TypeString,
-				Optional:     true,
-				InputDefault: "",
-			},
 			"title": {
 				Type:     schema.TypeString,
 				Required: true,
@@ -346,7 +341,6 @@ func populate(b *models.Base, d *schema.ResourceData) error {
 	if err != nil {
 		return err
 	}
-	err = d.Set("_key", interfaceMap["_key"])
 	err = d.Set("title", interfaceMap["title"])
 	if err != nil {
 		return err

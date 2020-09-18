@@ -25,11 +25,11 @@ func resourceKPIBaseSearch() *schema.Resource {
 			State: kpiBaseSearchImport,
 		},
 		Schema: map[string]*schema.Schema{
-			"_key": {
-				Type:         schema.TypeString,
-				Optional:     true,
-				InputDefault: "",
-			},
+			// "_key": {
+			// 	Type:         schema.TypeString,
+			// 	Optional:     true,
+			// 	InputDefault: "",
+			// },
 			"title": {
 				Type:     schema.TypeString,
 				Required: true,
@@ -79,7 +79,7 @@ func resourceKPIBaseSearch() *schema.Resource {
 				Type:     schema.TypeBool,
 				Required: true,
 			},
-			"isFirstTimeSaveDone": {
+			"is_first_time_save_done": {
 				Type:     schema.TypeBool,
 				Required: true,
 			},
@@ -162,6 +162,23 @@ func resourceKPIBaseSearch() *schema.Resource {
 	}
 }
 
+func metric(source map[string]interface{}) interface{} {
+	m := map[string]interface{}{}
+	m["_key"] = source["_key"]
+	m["aggregate_statop"] = source["aggregate_statop"]
+	m["entity_statop"] = source["entity_statop"]
+	m["fill_gaps"] = source["fill_gaps"]
+	m["gap_custom_alert_value"] = source["gap_custom_alert_value"]
+	m["gap_severity"] = source["gap_severity"]
+	m["gap_severity_color"] = source["gap_severity_color"]
+	m["gap_severity_color_light"] = source["gap_severity_color_light"]
+	m["gap_severity_value"] = source["gap_severity_value"]
+	m["threshold_field"] = source["threshold_field"]
+	m["title"] = source["title"]
+	m["unit"] = source["unit"]
+	return m
+}
+
 func kpiBaseSearch(d *schema.ResourceData) (config *models.Base, err error) {
 	body := map[string]interface{}{}
 	body["objectType"] = "kpi_base_search"
@@ -178,9 +195,17 @@ func kpiBaseSearch(d *schema.ResourceData) (config *models.Base, err error) {
 	body["identifying_name"] = d.Get("identifying_name").(string)
 	body["is_entity_breakdown"] = d.Get("is_entity_breakdown").(bool)
 	body["is_service_entity_filter"] = d.Get("is_service_entity_filter").(bool)
-	body["isFirstTimeSaveDone"] = d.Get("isFirstTimeSaveDone").(bool)
+	body["isFirstTimeSaveDone"] = d.Get("is_first_time_save_done").(bool)
 	body["metric_qualifier"] = d.Get("metric_qualifier").(string)
 
+	metrics := []interface{}{}
+	for _, g := range d.Get("metrics").(*schema.Set).List() {
+		metrics = append(metrics, metric(g.(map[string]interface{})))
+		if err != nil {
+			return nil, err
+		}
+	}
+	body["metrics"] = metrics
 	// body["metrics"] = d.Get("metrics").(string)
 
 	body["search_alert_earliest"] = d.Get("search_alert_earliest").(bool)
