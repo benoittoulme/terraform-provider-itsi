@@ -8,10 +8,7 @@ import (
 )
 
 func kpiThresholdTemplateBase(key string, title string) *models.Base {
-	base := models.NewBase(key, title, "itoa_interface", "kpi_threshold_template")
-	base.TFIDField = func() string {
-		return "title"
-	}
+	base := models.NewBase(key, title, "kpi_threshold_template")
 	return base
 }
 
@@ -283,7 +280,12 @@ func kpiThresholdTemplateCreate(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return err
 	}
-	return template.Create(client.User, client.Password, client.Host, client.Port)
+	b, err := template.Create(client.User, client.Password, client.Host, client.Port)
+	if err != nil {
+		return err
+	}
+	b.Read(client.User, client.Password, client.Host, client.Port)
+	return populate(b, d)
 }
 
 func thresholdRead(threshold_data map[string]interface{}) interface{} {

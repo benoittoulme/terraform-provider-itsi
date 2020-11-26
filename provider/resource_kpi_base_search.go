@@ -8,10 +8,7 @@ import (
 )
 
 func kpiBaseSearchBase(key string, title string) *models.Base {
-	base := models.NewBase(key, title, "itoa_interface", "kpi_base_search")
-	base.TFIDField = func() string {
-		return "title"
-	}
+	base := models.NewBase(key, title, "kpi_base_search")
 	return base
 }
 
@@ -230,10 +227,113 @@ func kpiBaseSearchCreate(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return err
 	}
-	return template.Create(client.User, client.Password, client.Host, client.Port)
+	b, err := template.Create(client.User, client.Password, client.Host, client.Port)
+	if err != nil {
+		return err
+	}
+	b.Read(client.User, client.Password, client.Host, client.Port)
+	return populate(b, d)
 }
 
 func kpiBaseSearchRead(d *schema.ResourceData, m interface{}) error {
+	client := m.(client)
+
+	base := kpiBaseSearchBase(d.Id(), d.Get("title").(string))
+	b, err := base.Find(client.User, client.Password, client.Host, client.Port)
+	if err != nil {
+		return err
+	}
+	if b == nil {
+		d.SetId("")
+		return nil
+	}
+	return populate(b, d)
+}
+
+func populateBaseSearch(b *models.Base, d *schema.ResourceData) error {
+	by, err := b.RawJson.MarshalJSON()
+	if err != nil {
+		return err
+	}
+	var interfaceMap map[string]interface{}
+	err = json.Unmarshal(by, &interfaceMap)
+	if err != nil {
+		return err
+	}
+
+	err = d.Set("title", interfaceMap["title"])
+	if err != nil {
+		return err
+	}
+	err = d.Set("description", interfaceMap["description"])
+	if err != nil {
+		return err
+	}
+	err = d.Set("actions", interfaceMap["actions"])
+	if err != nil {
+		return err
+	}
+	err = d.Set("alert_lag", interfaceMap["alert_lag"])
+	if err != nil {
+		return err
+	}
+	err = d.Set("alert_period", interfaceMap["alert_period"])
+	if err != nil {
+		return err
+	}
+	err = d.Set("base_search", interfaceMap["base_search"])
+	if err != nil {
+		return err
+	}
+	err = d.Set("entity_alias_filtering_fields", interfaceMap["entity_alias_filtering_fields"])
+	if err != nil {
+		return err
+	}
+	err = d.Set("entity_breakdown_id_fields", interfaceMap["entity_breakdown_id_fields"])
+	if err != nil {
+		return err
+	}
+	err = d.Set("entity_id_fields", interfaceMap["entity_id_fields"])
+	if err != nil {
+		return err
+	}
+	err = d.Set("identifying_name", interfaceMap["identifying_name"])
+	if err != nil {
+		return err
+	}
+	err = d.Set("is_entity_breakdown", interfaceMap["is_entity_breakdown"])
+	if err != nil {
+		return err
+	}
+	err = d.Set("is_service_entity_filter", interfaceMap["is_service_entity_filter"])
+	if err != nil {
+		return err
+	}
+	err = d.Set("is_first_time_save_done", interfaceMap["isFirstTimeSaveDone"])
+	if err != nil {
+		return err
+	}
+	err = d.Set("metric_qualifier", interfaceMap["metric_qualifier"])
+	if err != nil {
+		return err
+	}
+	err = d.Set("metrics", interfaceMap["metrics"])
+	if err != nil {
+		return err
+	}
+	err = d.Set("search_alert_earliest", interfaceMap["search_alert_earliest"])
+	if err != nil {
+		return err
+	}
+	err = d.Set("sec_grp", interfaceMap["sec_grp"])
+	if err != nil {
+		return err
+	}
+	err = d.Set("source_itsi_da", interfaceMap["source_itsi_da"])
+	if err != nil {
+		return err
+	}
+	d.SetId(b.RESTKey)
 	return nil
 }
 

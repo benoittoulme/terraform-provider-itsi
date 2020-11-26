@@ -10,36 +10,23 @@ var HOST string = "localhost"
 var PORT int = 18089
 
 func main() {
-	err := models.DumpBaseServiceTemplates(USER, PASSWORD, HOST, PORT)
-	if err != nil {
-		panic(err)
+	for k, _ := range models.RestConfigs {
+		err := dump(USER, PASSWORD, HOST, PORT, k)
+		if err != nil {
+			panic(err)
+		}
 	}
-	err = models.DumpCorrelationSearches(USER, PASSWORD, HOST, PORT)
+}
+
+func dump(user, password, host string, port int, objectType string) error {
+	base := models.NewBase("", "", objectType)
+	items, err := base.Dump(user, password, host, port)
 	if err != nil {
-		panic(err)
+		return err
 	}
-	err = models.DumpEntities(USER, PASSWORD, HOST, PORT)
+	err = base.AuditLog(items, nil)
 	if err != nil {
-		panic(err)
+		return err
 	}
-	err = models.DumpGlassTables(USER, PASSWORD, HOST, PORT)
-	if err != nil {
-		panic(err)
-	}
-	err = models.DumpKPIBaseSearches(USER, PASSWORD, HOST, PORT)
-	if err != nil {
-		panic(err)
-	}
-	err = models.DumpKPITemplates(USER, PASSWORD, HOST, PORT)
-	if err != nil {
-		panic(err)
-	}
-	err = models.DumpKPIThresholdTemplates(USER, PASSWORD, HOST, PORT)
-	if err != nil {
-		panic(err)
-	}
-	err = models.DumpServices(USER, PASSWORD, HOST, PORT)
-	if err != nil {
-		panic(err)
-	}
+	return base.AuditFields(items)
 }

@@ -18,32 +18,79 @@ func init() {
 	cache = map[string]map[string]map[string]*Base{}
 }
 
-type Base struct {
-	// key used to collect this resource via the REST API
-	RESTKey      string
-	RESTKeyField func() string
-	// Terraform Identifier
-	TFID          string
-	TFIDField     func() string
-	restInterface string
+type restConfig struct {
 	objectType    string
-	RawJson       json.RawMessage
-	auditList     []string
-	fields        []string
+	restKeyField  string
+	tfIDField     string
+	restInterface string
 }
 
-func NewBase(key, id, restInterface, objectType string) *Base {
+var RestConfigs = map[string]restConfig{
+	"base_service_template": {
+		objectType:    "base_service_template",
+		restKeyField:  "_key",
+		tfIDField:     "title",
+		restInterface: "itoa_interface",
+	},
+	"correlation_search": {
+		objectType:    "correlation_search",
+		restKeyField:  "name",
+		tfIDField:     "name",
+		restInterface: "event_management_interface",
+	},
+	"entity": {
+		objectType:    "entity",
+		restKeyField:  "_key",
+		tfIDField:     "_key",
+		restInterface: "itoa_interface",
+	},
+	"glass_table": {
+		objectType:    "glass_table",
+		restKeyField:  "_key",
+		tfIDField:     "_key",
+		restInterface: "itoa_interface",
+	},
+	"kpi_base_search": {
+		objectType:    "kpi_base_search",
+		restKeyField:  "_key",
+		tfIDField:     "title",
+		restInterface: "itoa_interface",
+	},
+	"kpi_template": {
+		objectType:    "kpi_template",
+		restKeyField:  "_key",
+		tfIDField:     "title",
+		restInterface: "itoa_interface",
+	},
+	"kpi_threshold_template": {
+		objectType:    "kpi_threshold_template",
+		restKeyField:  "_key",
+		tfIDField:     "title",
+		restInterface: "itoa_interface",
+	},
+	"service": {
+		objectType:    "service",
+		restKeyField:  "_key",
+		tfIDField:     "_key",
+		restInterface: "itoa_interface",
+	},
+}
+
+type Base struct {
+	restConfig
+	// key used to collect this resource via the REST API
+	RESTKey string
+	// Terraform Identifier
+	TFID    string
+	RawJson json.RawMessage
+	fields  []string
+}
+
+func NewBase(key, id, objectType string) *Base {
 	b := &Base{
-		RESTKey:       key,
-		TFID:          id,
-		restInterface: restInterface,
-		objectType:    objectType,
-	}
-	b.RESTKeyField = func() string {
-		return "_key"
-	}
-	b.TFIDField = func() string {
-		return "_key"
+		restConfig: RestConfigs[objectType],
+		RESTKey:    key,
+		TFID:       id,
 	}
 	return b
 }
@@ -76,12 +123,8 @@ func NewBase(key, id, restInterface, objectType string) *Base {
 
 func (b *Base) Clone() *Base {
 	b_ := &Base{
-		RESTKeyField:  b.RESTKeyField,
-		TFIDField:     b.TFIDField,
-		auditList:     b.auditList,
-		restInterface: b.restInterface,
-		objectType:    b.objectType,
-		RawJson:       b.RawJson,
+		restConfig: b.restConfig,
+		RawJson:    b.RawJson,
 	}
 	return b_
 }
@@ -94,35 +137,39 @@ func (b *Base) Transport(host string) *http.Transport {
 	return tr
 }
 
-func (b *Base) Create(user, password, host string, port int) error {
+func (b *Base) Create(user, password, host string, port int) (*Base, error) {
 	reqBody, err := json.Marshal(b.RawJson)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	client := &http.Client{Transport: b.Transport(host)}
 	url := fmt.Sprintf("https://%[1]s:%[2]d/servicesNS/nobody/SA-ITOA/%[3]s/%[4]s", host, port, b.restInterface, b.objectType)
 	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(reqBody))
 	if err != nil {
-		return err
+		return nil, err
 	}
 	req.SetBasicAuth(user, password)
 	req.Header.Add("Content-Type", "application/json")
 	resp, err := client.Do(req)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer resp.Body.Close()
-
-	if resp.StatusCode != 200 {
-		body, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			return fmt.Errorf("create error: %v\n", resp.Status)
-		}
-
-		return fmt.Errorf("create error: %v \n%s\n", resp.Status, body)
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("create error: %v\n", resp.Status)
 	}
+	if resp.StatusCode != 200 {
+		return nil, fmt.Errorf("create error: %v \n%s\n", resp.Status, body)
+	}
+	var r map[string]string
+	err = json.Unmarshal(body, &r)
+	if err != nil {
+		return nil, err
+	}
+	b.RESTKey = r[b.restConfig.restKeyField]
 	b.storeCache()
-	return nil
+	return b, nil
 }
 
 func (b *Base) Read(user, password, host string, port int) (*Base, error) {
@@ -323,7 +370,7 @@ func (b *Base) Populate(raw []byte) error {
 	if err != nil {
 		return err
 	}
-	key := b.RESTKeyField()
+	key := b.restKeyField
 	if _, ok := fieldsMap[key]; !ok {
 		return fmt.Errorf("missing %s RESTKey field for %s", key, b.objectType)
 	}
@@ -335,7 +382,7 @@ func (b *Base) Populate(raw []byte) error {
 	if err != nil {
 		return err
 	}
-	id := b.TFIDField()
+	id := b.tfIDField
 	if _, ok := fieldsMap[id]; !ok {
 		return fmt.Errorf("missing %s TFID field for %s", id, b.objectType)
 	}
@@ -355,7 +402,7 @@ func (b *Base) Populate(raw []byte) error {
 	return nil
 }
 
-func (b *Base) auditLog(items []*Base, auditList []string) error {
+func (b *Base) AuditLog(items []*Base, auditList []string) error {
 	filename := fmt.Sprintf("dump/%s.yaml", b.objectType)
 	objects := []interface{}{}
 	auditMap := map[string]bool{}
@@ -397,7 +444,7 @@ func (b *Base) auditLog(items []*Base, auditList []string) error {
 	return ioutil.WriteFile(filename, by, 0644)
 }
 
-func (b *Base) auditFields(items []*Base) error {
+func (b *Base) AuditFields(items []*Base) error {
 	filename := fmt.Sprintf("fields/%s.yaml", b.objectType)
 	fieldsMap := map[string]bool{}
 	for _, item := range items {
