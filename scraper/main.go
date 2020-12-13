@@ -1,18 +1,30 @@
 package main
 
 import (
+	"log"
+	"os"
+
+	"github.com/akamensky/argparse"
 	"github.com/benoittoulme/terraform-provider-itsi/models"
 )
 
-var USER string = "admin"
-var PASSWORD string = "changeme"
-var HOST string = "localhost"
-var PORT int = 18089
-
 func main() {
-	models.Verbose = true
+	parser := argparse.NewParser("ITSI scraper", "Dump ITSI resources via REST interface and format them in a file.")
+
+	user := parser.String("u", "user", &argparse.Options{Required: false, Help: "user", Default: "admin"})
+	password := parser.String("p", "password", &argparse.Options{Required: false, Help: "password", Default: "changeme"})
+	host := parser.String("s", "host", &argparse.Options{Required: false, Help: "host", Default: "localhost"})
+	port := parser.Int("o", "port", &argparse.Options{Required: false, Help: "port", Default: 8089})
+	verbose := parser.Selector("v", "verbose", []string{"true", "false"}, &argparse.Options{Required: false, Help: "verbose mode", Default: "false"})
+
+	err := parser.Parse(os.Args)
+	if err != nil {
+		log.Fatal(parser.Usage(err))
+	}
+
+	models.Verbose = (*verbose == "true")
 	for k, _ := range models.RestConfigs {
-		err := dump(USER, PASSWORD, HOST, PORT, k)
+		err := dump(*user, *password, *host, *port, k)
 		if err != nil {
 			panic(err)
 		}
