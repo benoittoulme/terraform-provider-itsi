@@ -13,9 +13,12 @@ import (
 )
 
 var cache map[string]map[string]map[string]*Base
+var clients map[string]*http.Client
+var SkipTLS bool = false
 
 func init() {
 	cache = map[string]map[string]map[string]*Base{}
+	clients = map[string]*http.Client{}
 }
 
 type restConfig struct {
@@ -129,12 +132,16 @@ func (b *Base) Clone() *Base {
 	return b_
 }
 
-func (b *Base) Transport(host string) *http.Transport {
+func (b *Base) NewClient(host string) *http.Client {
+	if c, ok := clients[host]; ok {
+		return c
+	}
 	tr := (http.DefaultTransport.(*http.Transport)).Clone()
-	if host == "localhost" {
+	if host == "localhost" || SkipTLS {
 		tr.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 	}
-	return tr
+	c := &http.Client{Transport: tr}
+	return c
 }
 
 func (b *Base) Create(user, password, host string, port int) (*Base, error) {
@@ -142,7 +149,7 @@ func (b *Base) Create(user, password, host string, port int) (*Base, error) {
 	if err != nil {
 		return nil, err
 	}
-	client := &http.Client{Transport: b.Transport(host)}
+	client := b.NewClient(host)
 	url := fmt.Sprintf("https://%[1]s:%[2]d/servicesNS/nobody/SA-ITOA/%[3]s/%[4]s", host, port, b.restInterface, b.objectType)
 	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(reqBody))
 	if err != nil {
@@ -185,7 +192,7 @@ func (b *Base) Create(user, password, host string, port int) (*Base, error) {
 }
 
 func (b *Base) Read(user, password, host string, port int) (*Base, error) {
-	client := &http.Client{Transport: b.Transport(host)}
+	client := b.NewClient(host)
 	url := fmt.Sprintf("https://%[1]s:%[2]d/servicesNS/nobody/SA-ITOA/%[3]s/%[4]s/%[5]s", host, port, b.restInterface, b.objectType, b.RESTKey)
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
@@ -236,7 +243,7 @@ func (b *Base) Update(user, password, host string, port int) error {
 		return err
 	}
 
-	client := &http.Client{Transport: b.Transport(host)}
+	client := b.NewClient(host)
 	url := fmt.Sprintf("https://%[1]s:%[2]d/servicesNS/nobody/SA-ITOA/%[3]s/%[4]s/%[5]s", host, port, b.restInterface, b.objectType, b.RESTKey)
 	req, err := http.NewRequest(http.MethodPut, url, bytes.NewBuffer(reqBody))
 	if err != nil {
@@ -274,7 +281,7 @@ func (b *Base) Update(user, password, host string, port int) error {
 
 func (b *Base) Delete(user, password, host string, port int) error {
 	b.deleteCache()
-	client := &http.Client{Transport: b.Transport(host)}
+	client := b.NewClient(host)
 	url := fmt.Sprintf("https://%[1]s:%[2]d/servicesNS/nobody/SA-ITOA/%[3]s/%[4]s/%[5]s", host, port, b.restInterface, b.objectType, b.RESTKey)
 	req, err := http.NewRequest(http.MethodDelete, url, nil)
 	if err != nil {
@@ -369,7 +376,7 @@ func (b *Base) Find(user, password, host string, port int) (*Base, error) {
 }
 
 func (b *Base) Dump(user, password, host string, port int) ([]*Base, error) {
-	client := &http.Client{Transport: b.Transport(host)}
+	client := b.NewClient(host)
 	url := fmt.Sprintf("https://%[1]s:%[2]d/servicesNS/nobody/SA-ITOA/%[3]s/%[4]s", host, port, b.restInterface, b.objectType)
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 
@@ -13,9 +14,10 @@ func main() {
 
 	user := parser.String("u", "user", &argparse.Options{Required: false, Help: "user", Default: "admin"})
 	password := parser.String("p", "password", &argparse.Options{Required: false, Help: "password", Default: "changeme"})
-	host := parser.String("s", "host", &argparse.Options{Required: false, Help: "host", Default: "localhost"})
+	host := parser.String("t", "host", &argparse.Options{Required: false, Help: "host", Default: "localhost"})
 	port := parser.Int("o", "port", &argparse.Options{Required: false, Help: "port", Default: 8089})
 	verbose := parser.Selector("v", "verbose", []string{"true", "false"}, &argparse.Options{Required: false, Help: "verbose mode", Default: "false"})
+	skipTLS := parser.Selector("s", "skip-tls", []string{"true", "false"}, &argparse.Options{Required: false, Help: "verbose mode", Default: "false"})
 
 	err := parser.Parse(os.Args)
 	if err != nil {
@@ -23,7 +25,9 @@ func main() {
 	}
 
 	models.Verbose = (*verbose == "true")
+	models.SkipTLS = (*skipTLS == "true")
 	for k, _ := range models.RestConfigs {
+		fmt.Printf("scraping %s...\n", k)
 		err := dump(*user, *password, *host, *port, k)
 		if err != nil {
 			panic(err)
