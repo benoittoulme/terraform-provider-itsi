@@ -148,6 +148,12 @@ func (b *Base) Create(user, password, host string, port int) (*Base, error) {
 	if err != nil {
 		return nil, err
 	}
+	if Verbose {
+		err = logRequest(req)
+		if err != nil {
+			return nil, err
+		}
+	}
 	req.SetBasicAuth(user, password)
 	req.Header.Add("Content-Type", "application/json")
 	resp, err := client.Do(req)
@@ -155,6 +161,12 @@ func (b *Base) Create(user, password, host string, port int) (*Base, error) {
 		return nil, err
 	}
 	defer resp.Body.Close()
+	if Verbose {
+		err = logResponse(resp)
+		if err != nil {
+			return nil, err
+		}
+	}
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("create error: %v\n", resp.Status)
@@ -180,11 +192,23 @@ func (b *Base) Read(user, password, host string, port int) (*Base, error) {
 		return nil, err
 	}
 	req.SetBasicAuth(user, password)
+	if Verbose {
+		err = logRequest(req)
+		if err != nil {
+			return nil, err
+		}
+	}
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
+	if Verbose {
+		err = logResponse(resp)
+		if err != nil {
+			return nil, err
+		}
+	}
 	if resp.StatusCode != 200 {
 		return nil, nil
 	}
@@ -219,12 +243,23 @@ func (b *Base) Update(user, password, host string, port int) error {
 		return err
 	}
 	req.SetBasicAuth(user, password)
+	if Verbose {
+		err = logRequest(req)
+		if err != nil {
+			return err
+		}
+	}
 	resp, err := client.Do(req)
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
-
+	if Verbose {
+		err = logResponse(resp)
+		if err != nil {
+			return err
+		}
+	}
 	if resp.StatusCode != 200 {
 		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
@@ -246,12 +281,23 @@ func (b *Base) Delete(user, password, host string, port int) error {
 		return err
 	}
 	req.SetBasicAuth(user, password)
+	if Verbose {
+		err = logRequest(req)
+		if err != nil {
+			return err
+		}
+	}
 	resp, err := client.Do(req)
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
-
+	if Verbose {
+		err = logResponse(resp)
+		if err != nil {
+			return err
+		}
+	}
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
@@ -330,11 +376,23 @@ func (b *Base) Dump(user, password, host string, port int) ([]*Base, error) {
 		return nil, err
 	}
 	req.SetBasicAuth(user, password)
+	if Verbose {
+		err = logRequest(req)
+		if err != nil {
+			return nil, err
+		}
+	}
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
+	if Verbose {
+		err = logResponse(resp)
+		if err != nil {
+			return nil, err
+		}
+	}
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err

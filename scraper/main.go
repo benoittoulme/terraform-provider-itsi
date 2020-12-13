@@ -10,6 +10,7 @@ var HOST string = "localhost"
 var PORT int = 18089
 
 func main() {
+	models.Verbose = true
 	for k, _ := range models.RestConfigs {
 		err := dump(USER, PASSWORD, HOST, PORT, k)
 		if err != nil {
