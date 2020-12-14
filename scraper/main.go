@@ -1,45 +1,49 @@
 package main
 
 import (
+	"fmt"
+	"log"
+	"os"
+
+	"github.com/akamensky/argparse"
 	"github.com/benoittoulme/terraform-provider-itsi/models"
 )
 
-var USER string = "admin"
-var PASSWORD string = "changeme"
-var HOST string = "localhost"
-var PORT int = 18089
-
 func main() {
-	err := models.DumpBaseServiceTemplates(USER, PASSWORD, HOST, PORT)
+	parser := argparse.NewParser("ITSI scraper", "Dump ITSI resources via REST interface and format them in a file.")
+
+	user := parser.String("u", "user", &argparse.Options{Required: false, Help: "user", Default: "admin"})
+	password := parser.String("p", "password", &argparse.Options{Required: false, Help: "password", Default: "changeme"})
+	host := parser.String("t", "host", &argparse.Options{Required: false, Help: "host", Default: "localhost"})
+	port := parser.Int("o", "port", &argparse.Options{Required: false, Help: "port", Default: 8089})
+	verbose := parser.Selector("v", "verbose", []string{"true", "false"}, &argparse.Options{Required: false, Help: "verbose mode", Default: "false"})
+	skipTLS := parser.Selector("s", "skip-tls", []string{"true", "false"}, &argparse.Options{Required: false, Help: "verbose mode", Default: "false"})
+
+	err := parser.Parse(os.Args)
 	if err != nil {
-		panic(err)
+		log.Fatal(parser.Usage(err))
 	}
-	err = models.DumpCorrelationSearches(USER, PASSWORD, HOST, PORT)
+
+	models.Verbose = (*verbose == "true")
+	models.SkipTLS = (*skipTLS == "true")
+	for k, _ := range models.RestConfigs {
+		fmt.Printf("scraping %s...\n", k)
+		err := dump(*user, *password, *host, *port, k)
+		if err != nil {
+			panic(err)
+		}
+	}
+}
+
+func dump(user, password, host string, port int, objectType string) error {
+	base := models.NewBase("", "", objectType)
+	items, err := base.Dump(user, password, host, port)
 	if err != nil {
-		panic(err)
+		return err
 	}
-	err = models.DumpEntities(USER, PASSWORD, HOST, PORT)
+	err = base.AuditLog(items, nil)
 	if err != nil {
-		panic(err)
+		return err
 	}
-	err = models.DumpGlassTables(USER, PASSWORD, HOST, PORT)
-	if err != nil {
-		panic(err)
-	}
-	err = models.DumpKPIBaseSearches(USER, PASSWORD, HOST, PORT)
-	if err != nil {
-		panic(err)
-	}
-	err = models.DumpKPITemplates(USER, PASSWORD, HOST, PORT)
-	if err != nil {
-		panic(err)
-	}
-	err = models.DumpKPIThresholdTemplates(USER, PASSWORD, HOST, PORT)
-	if err != nil {
-		panic(err)
-	}
-	err = models.DumpServices(USER, PASSWORD, HOST, PORT)
-	if err != nil {
-		panic(err)
-	}
+	return base.AuditFields(items)
 }

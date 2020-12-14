@@ -8,10 +8,7 @@ import (
 )
 
 func kpiThresholdTemplateBase(key string, title string) *models.Base {
-	base := models.NewBase(key, title, "itoa_interface", "kpi_threshold_template")
-	base.TFIDField = func() string {
-		return "title"
-	}
+	base := models.NewBase(key, title, "kpi_threshold_template")
 	return base
 }
 
@@ -226,7 +223,7 @@ func threshold(source map[string]interface{}) (interface{}, error) {
 	return threshold, nil
 }
 
-func kPIThresholdTemplate(d *schema.ResourceData) (config *models.Base, err error) {
+func kpiThresholdTemplate(d *schema.ResourceData) (config *models.Base, err error) {
 	body := map[string]interface{}{}
 	body["objectType"] = "kpi_threshold_template"
 	body["title"] = d.Get("title").(string)
@@ -279,11 +276,16 @@ func kPIThresholdTemplate(d *schema.ResourceData) (config *models.Base, err erro
 
 func kpiThresholdTemplateCreate(d *schema.ResourceData, m interface{}) error {
 	client := m.(client)
-	template, err := kPIThresholdTemplate(d)
+	template, err := kpiThresholdTemplate(d)
 	if err != nil {
 		return err
 	}
-	return template.Create(client.User, client.Password, client.Host, client.Port)
+	b, err := template.Create(client.User, client.Password, client.Host, client.Port)
+	if err != nil {
+		return err
+	}
+	b.Read(client.User, client.Password, client.Host, client.Port)
+	return populateKpiThresholdTemplateResourceData(b, d)
 }
 
 func thresholdRead(threshold_data map[string]interface{}) interface{} {
@@ -328,10 +330,10 @@ func kpiThresholdTemplateRead(d *schema.ResourceData, m interface{}) error {
 		d.SetId("")
 		return nil
 	}
-	return populate(b, d)
+	return populateKpiThresholdTemplateResourceData(b, d)
 }
 
-func populate(b *models.Base, d *schema.ResourceData) error {
+func populateKpiThresholdTemplateResourceData(b *models.Base, d *schema.ResourceData) error {
 	by, err := b.RawJson.MarshalJSON()
 	if err != nil {
 		return err
@@ -399,7 +401,7 @@ func kpiThresholdTemplateUpdate(d *schema.ResourceData, m interface{}) error {
 		return kpiThresholdTemplateCreate(d, m)
 	}
 
-	template, err := kPIThresholdTemplate(d)
+	template, err := kpiThresholdTemplate(d)
 	if err != nil {
 		return err
 	}
@@ -429,7 +431,7 @@ func kpiThresholdTemplateImport(d *schema.ResourceData, m interface{}) ([]*schem
 	if b == nil {
 		return nil, err
 	}
-	err = populate(b, d)
+	err = populateKpiThresholdTemplateResourceData(b, d)
 	if err != nil {
 		return nil, err
 	}

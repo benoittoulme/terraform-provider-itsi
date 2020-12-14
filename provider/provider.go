@@ -1,6 +1,9 @@
 package main
 
 import (
+	"os"
+
+	"github.com/benoittoulme/terraform-provider-itsi/models"
 	"github.com/hashicorp/terraform/helper/schema"
 )
 
@@ -35,6 +38,7 @@ func Provider() *schema.Provider {
 		},
 		ResourcesMap: map[string]*schema.Resource{
 			"itsi_kpi_threshold_template": resourceKPIThresholdTemplate(),
+			"itsi_kpi_base_search":        resourceKPIBaseSearch(),
 		},
 	}
 }
@@ -45,5 +49,8 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	client.Password = d.Get("password").(string)
 	client.Host = d.Get("host").(string)
 	client.Port = d.Get("port").(int)
+	if os.Getenv("TF_LOG") == "true" {
+		models.Verbose = true
+	}
 	return client, nil
 }
