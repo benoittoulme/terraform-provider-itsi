@@ -74,7 +74,7 @@ var RestConfigs = map[string]restConfig{
 	"service": {
 		objectType:    "service",
 		restKeyField:  "_key",
-		tfIDField:     "_key",
+		tfIDField:     "title",
 		restInterface: "itoa_interface",
 	},
 }

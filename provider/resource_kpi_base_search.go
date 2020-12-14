@@ -54,7 +54,8 @@ func resourceKPIBaseSearch() *schema.Resource {
 			},
 			"entity_alias_filtering_fields": {
 				Type:     schema.TypeString,
-				Required: true,
+				Required: false,
+				Optional: true,
 			},
 			"entity_breakdown_id_fields": {
 				Type:     schema.TypeString,
@@ -203,11 +204,9 @@ func kpiBaseSearch(d *schema.ResourceData) (config *models.Base, err error) {
 		}
 	}
 	body["metrics"] = metrics
-	// body["metrics"] = d.Get("metrics").(string)
-
-	body["search_alert_earliest"] = d.Get("search_alert_earliest").(bool)
+	body["search_alert_earliest"] = d.Get("search_alert_earliest").(string)
 	body["sec_grp"] = d.Get("sec_grp").(string)
-	body["source_itsi_da"] = d.Get("source_itsi_da").(bool)
+	body["source_itsi_da"] = d.Get("source_itsi_da").(string)
 
 	by, err := json.Marshal(body)
 	if err != nil {
@@ -232,7 +231,7 @@ func kpiBaseSearchCreate(d *schema.ResourceData, m interface{}) error {
 		return err
 	}
 	b.Read(client.User, client.Password, client.Host, client.Port)
-	return populate(b, d)
+	return populateBaseSearchResourceData(b, d)
 }
 
 func kpiBaseSearchRead(d *schema.ResourceData, m interface{}) error {
@@ -247,10 +246,10 @@ func kpiBaseSearchRead(d *schema.ResourceData, m interface{}) error {
 		d.SetId("")
 		return nil
 	}
-	return populate(b, d)
+	return populateBaseSearchResourceData(b, d)
 }
 
-func populateBaseSearch(b *models.Base, d *schema.ResourceData) error {
+func populateBaseSearchResourceData(b *models.Base, d *schema.ResourceData) error {
 	by, err := b.RawJson.MarshalJSON()
 	if err != nil {
 		return err
@@ -338,13 +337,53 @@ func populateBaseSearch(b *models.Base, d *schema.ResourceData) error {
 }
 
 func kpiBaseSearchUpdate(d *schema.ResourceData, m interface{}) error {
-	return nil
+	client := m.(client)
+	base := kpiBaseSearchBase(d.Id(), d.Get("title").(string))
+	existing, err := base.Find(client.User, client.Password, client.Host, client.Port)
+	if err != nil {
+		return err
+	}
+	if existing == nil {
+		return kpiBaseSearchCreate(d, m)
+	}
+
+	template, err := kpiBaseSearch(d)
+	if err != nil {
+		return err
+	}
+	return template.Update(client.User, client.Password, client.Host, client.Port)
 }
 
 func kpiBaseSearchDelete(d *schema.ResourceData, m interface{}) error {
-	return nil
+	client := m.(client)
+	base := kpiBaseSearchBase(d.Id(), d.Get("title").(string))
+	existing, err := base.Find(client.User, client.Password, client.Host, client.Port)
+	if err != nil {
+		return err
+	}
+	if existing == nil {
+		return nil
+	}
+	return existing.Delete(client.User, client.Password, client.Host, client.Port)
+
 }
 
 func kpiBaseSearchImport(d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
-	return nil, nil
+	client := m.(client)
+	b := kpiBaseSearchBase(d.Id(), d.Get("title").(string))
+	b, err := b.Read(client.User, client.Password, client.Host, client.Port)
+	if err != nil {
+		return nil, err
+	}
+	if b == nil {
+		return nil, err
+	}
+	err = populateBaseSearchResourceData(b, d)
+	if err != nil {
+		return nil, err
+	}
+	if d.Id() == "" {
+		return nil, nil
+	}
+	return []*schema.ResourceData{d}, nil
 }

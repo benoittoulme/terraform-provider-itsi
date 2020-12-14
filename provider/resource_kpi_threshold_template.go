@@ -285,7 +285,7 @@ func kpiThresholdTemplateCreate(d *schema.ResourceData, m interface{}) error {
 		return err
 	}
 	b.Read(client.User, client.Password, client.Host, client.Port)
-	return populate(b, d)
+	return populateKpiThresholdTemplateResourceData(b, d)
 }
 
 func thresholdRead(threshold_data map[string]interface{}) interface{} {
@@ -330,10 +330,10 @@ func kpiThresholdTemplateRead(d *schema.ResourceData, m interface{}) error {
 		d.SetId("")
 		return nil
 	}
-	return populate(b, d)
+	return populateKpiThresholdTemplateResourceData(b, d)
 }
 
-func populate(b *models.Base, d *schema.ResourceData) error {
+func populateKpiThresholdTemplateResourceData(b *models.Base, d *schema.ResourceData) error {
 	by, err := b.RawJson.MarshalJSON()
 	if err != nil {
 		return err
@@ -431,7 +431,7 @@ func kpiThresholdTemplateImport(d *schema.ResourceData, m interface{}) ([]*schem
 	if b == nil {
 		return nil, err
 	}
-	err = populate(b, d)
+	err = populateKpiThresholdTemplateResourceData(b, d)
 	if err != nil {
 		return nil, err
 	}
