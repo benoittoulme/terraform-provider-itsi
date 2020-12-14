@@ -29,6 +29,12 @@ type restConfig struct {
 }
 
 var RestConfigs = map[string]restConfig{
+	"backup_restore": {
+		objectType:    "backup_restore",
+		restKeyField:  "_key",
+		tfIDField:     "_key",
+		restInterface: "backup_restore_interface",
+	},
 	"base_service_template": {
 		objectType:    "base_service_template",
 		restKeyField:  "_key",
