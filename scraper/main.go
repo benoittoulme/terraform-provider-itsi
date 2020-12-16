@@ -19,6 +19,11 @@ func main() {
 	verbose := parser.Selector("v", "verbose", []string{"true", "false"}, &argparse.Options{Required: false, Help: "verbose mode", Default: "false"})
 	skipTLS := parser.Selector("s", "skip-tls", []string{"true", "false"}, &argparse.Options{Required: false, Help: "verbose mode", Default: "false"})
 
+	objectTypes := []string{}
+	for k, _ := range models.RestConfigs {
+		objectTypes = append(objectTypes, k)
+	}
+	objs := parser.StringList("b", "obj", &argparse.Options{Required: false, Help: "object types", Default: objectTypes})
 	err := parser.Parse(os.Args)
 	if err != nil {
 		log.Fatal(parser.Usage(err))
@@ -26,7 +31,7 @@ func main() {
 
 	models.Verbose = (*verbose == "true")
 	models.SkipTLS = (*skipTLS == "true")
-	for k, _ := range models.RestConfigs {
+	for _, k := range *objs {
 		fmt.Printf("scraping %s...\n", k)
 		err := dump(*user, *password, *host, *port, k)
 		if err != nil {

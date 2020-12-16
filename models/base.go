@@ -96,6 +96,9 @@ type Base struct {
 }
 
 func NewBase(key, id, objectType string) *Base {
+	if _, ok := RestConfigs[objectType]; !ok {
+		panic(fmt.Sprintf("invalid objectype %s!", objectType))
+	}
 	b := &Base{
 		restConfig: RestConfigs[objectType],
 		RESTKey:    key,
