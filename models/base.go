@@ -477,12 +477,12 @@ func (b *Base) Populate(raw []byte) error {
 	return nil
 }
 
-func (b *Base) AuditLog(items []*Base, auditList []string) error {
+func (b *Base) AuditLog(items []*Base, auditList []string, format string) error {
 	err := os.MkdirAll("dump", os.ModePerm)
 	if err != nil {
 		return err
 	}
-	filename := fmt.Sprintf("dump/%s.yaml", b.objectType)
+	filename := fmt.Sprintf("dump/%s.%s", b.objectType, format)
 	objects := []interface{}{}
 	auditMap := map[string]bool{}
 	for _, f := range auditList {
@@ -516,7 +516,13 @@ func (b *Base) AuditLog(items []*Base, auditList []string) error {
 		}
 		objects = append(objects, i)
 	}
-	by, err := yaml.Marshal(objects)
+	var by []byte
+	switch format {
+	case "json":
+		by, err = json.Marshal(objects)
+	default:
+		by, err = yaml.Marshal(objects)
+	}
 	if err != nil {
 		return err
 	}

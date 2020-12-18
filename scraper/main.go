@@ -18,6 +18,7 @@ func main() {
 	port := parser.Int("o", "port", &argparse.Options{Required: false, Help: "port", Default: 8089})
 	verbose := parser.Selector("v", "verbose", []string{"true", "false"}, &argparse.Options{Required: false, Help: "verbose mode", Default: "false"})
 	skipTLS := parser.Selector("s", "skip-tls", []string{"true", "false"}, &argparse.Options{Required: false, Help: "verbose mode", Default: "false"})
+	format := parser.String("f", "format", &argparse.Options{Required: false, Help: "yaml|json", Default: "yaml"})
 
 	objectTypes := []string{}
 	for k, _ := range models.RestConfigs {
@@ -33,20 +34,20 @@ func main() {
 	models.SkipTLS = (*skipTLS == "true")
 	for _, k := range *objs {
 		fmt.Printf("scraping %s...\n", k)
-		err := dump(*user, *password, *host, *port, k)
+		err := dump(*user, *password, *host, *port, k, *format)
 		if err != nil {
 			panic(err)
 		}
 	}
 }
 
-func dump(user, password, host string, port int, objectType string) error {
+func dump(user, password, host string, port int, objectType, format string) error {
 	base := models.NewBase("", "", objectType)
 	items, err := base.Dump(user, password, host, port)
 	if err != nil {
 		return err
 	}
-	err = base.AuditLog(items, nil)
+	err = base.AuditLog(items, nil, format)
 	if err != nil {
 		return err
 	}
