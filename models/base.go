@@ -519,7 +519,7 @@ func (b *Base) AuditLog(items []*Base, auditList []string, format string) error 
 	var by []byte
 	switch format {
 	case "json":
-		by, err = json.Marshal(objects)
+		by, err = json.MarshalIndent(objects, "", "  ")
 	default:
 		by, err = yaml.Marshal(objects)
 	}
