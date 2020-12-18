@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"sort"
 
 	"gopkg.in/yaml.v3"
@@ -477,6 +478,10 @@ func (b *Base) Populate(raw []byte) error {
 }
 
 func (b *Base) AuditLog(items []*Base, auditList []string) error {
+	err := os.MkdirAll("dump", os.ModePerm)
+	if err != nil {
+		return err
+	}
 	filename := fmt.Sprintf("dump/%s.yaml", b.objectType)
 	objects := []interface{}{}
 	auditMap := map[string]bool{}
@@ -519,6 +524,10 @@ func (b *Base) AuditLog(items []*Base, auditList []string) error {
 }
 
 func (b *Base) AuditFields(items []*Base) error {
+	err := os.MkdirAll("fields", os.ModePerm)
+	if err != nil {
+		return err
+	}
 	filename := fmt.Sprintf("fields/%s.yaml", b.objectType)
 	fieldsMap := map[string]bool{}
 	for _, item := range items {
