@@ -18,7 +18,7 @@ func main() {
 	port := parser.Int("o", "port", &argparse.Options{Required: false, Help: "port", Default: 8089})
 	verbose := parser.Selector("v", "verbose", []string{"true", "false"}, &argparse.Options{Required: false, Help: "verbose mode", Default: "false"})
 	skipTLS := parser.Selector("s", "skip-tls", []string{"true", "false"}, &argparse.Options{Required: false, Help: "verbose mode", Default: "false"})
-	format := parser.String("f", "format", &argparse.Options{Required: false, Help: "yaml|json", Default: "yaml"})
+	format := parser.Selector("f", "format", []string{"json", "yaml"}, &argparse.Options{Required: false, Help: "output format. json|yaml", Default: "yaml"})
 
 	objectTypes := []string{}
 	for k, _ := range models.RestConfigs {
