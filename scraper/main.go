@@ -17,7 +17,7 @@ func main() {
 	host := parser.String("t", "host", &argparse.Options{Required: false, Help: "host", Default: "localhost"})
 	port := parser.Int("o", "port", &argparse.Options{Required: false, Help: "port", Default: 8089})
 	verbose := parser.Selector("v", "verbose", []string{"true", "false"}, &argparse.Options{Required: false, Help: "verbose mode", Default: "false"})
-	skipTLS := parser.Selector("s", "skip-tls", []string{"true", "false"}, &argparse.Options{Required: false, Help: "verbose mode", Default: "false"})
+	skipTLS := parser.Selector("s", "skip-tls", []string{"true", "false"}, &argparse.Options{Required: false, Help: "skip TLS check", Default: "false"})
 	format := parser.Selector("f", "format", []string{"json", "yaml"}, &argparse.Options{Required: false, Help: "output format. json|yaml", Default: "yaml"})
 
 	objectTypes := []string{}
