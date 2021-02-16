@@ -30,11 +30,31 @@ type restConfig struct {
 }
 
 var RestConfigs = map[string]restConfig{
+	// backup_restore_interface
 	"backup_restore": {
 		objectType:    "backup_restore",
 		restKeyField:  "_key",
 		tfIDField:     "_key",
 		restInterface: "backup_restore_interface",
+	},
+	// itoa_interface
+	"team": {
+		objectType:    "team",
+		restKeyField:  "_key",
+		tfIDField:     "title",
+		restInterface: "itoa_interface",
+	},
+	"entity": {
+		objectType:    "entity",
+		restKeyField:  "_key",
+		tfIDField:     "_key",
+		restInterface: "itoa_interface",
+	},
+	"service": {
+		objectType:    "service",
+		restKeyField:  "_key",
+		tfIDField:     "title",
+		restInterface: "itoa_interface",
 	},
 	"base_service_template": {
 		objectType:    "base_service_template",
@@ -42,16 +62,16 @@ var RestConfigs = map[string]restConfig{
 		tfIDField:     "title",
 		restInterface: "itoa_interface",
 	},
-	"correlation_search": {
-		objectType:    "correlation_search",
-		restKeyField:  "name",
-		tfIDField:     "name",
-		restInterface: "event_management_interface",
-	},
-	"entity": {
-		objectType:    "entity",
+	"kpi_base_search": {
+		objectType:    "kpi_base_search",
 		restKeyField:  "_key",
-		tfIDField:     "_key",
+		tfIDField:     "title",
+		restInterface: "itoa_interface",
+	},
+	"deep_dive": {
+		objectType:    "deep_dive",
+		restKeyField:  "_key",
+		tfIDField:     "title",
 		restInterface: "itoa_interface",
 	},
 	"glass_table": {
@@ -60,8 +80,8 @@ var RestConfigs = map[string]restConfig{
 		tfIDField:     "_key",
 		restInterface: "itoa_interface",
 	},
-	"kpi_base_search": {
-		objectType:    "kpi_base_search",
+	"home_view": {
+		objectType:    "home_view",
 		restKeyField:  "_key",
 		tfIDField:     "title",
 		restInterface: "itoa_interface",
@@ -78,12 +98,51 @@ var RestConfigs = map[string]restConfig{
 		tfIDField:     "title",
 		restInterface: "itoa_interface",
 	},
-	"service": {
-		objectType:    "service",
+	"event_management_state": {
+		objectType:    "event_management_state",
 		restKeyField:  "_key",
 		tfIDField:     "title",
 		restInterface: "itoa_interface",
 	},
+	"entity_relationship": {
+		objectType:    "entity",
+		restKeyField:  "_key",
+		tfIDField:     "_key",
+		restInterface: "itoa_interface",
+	},
+	"entity_relationship_rule": {
+		objectType:    "entity",
+		restKeyField:  "_key",
+		tfIDField:     "_key",
+		restInterface: "itoa_interface",
+	},
+	// event_management_interface
+	"notable_event_aggregation_policy": {
+		objectType:    "notable_event_aggregation_policy",
+		restKeyField:  "_key",
+		tfIDField:     "title",
+		restInterface: "event_management_interface",
+	},
+	"correlation_search": {
+		objectType:    "correlation_search",
+		restKeyField:  "name",
+		tfIDField:     "name",
+		restInterface: "event_management_interface",
+	},
+
+	"notable_event_group": {
+		objectType:    "notable_event_group",
+		restKeyField:  "_key",
+		tfIDField:     "_key",
+		restInterface: "event_management_interface",
+	},
+	// notable_event_comment does not support bulk get
+	// "notable_event_comment": {
+	// 	objectType:    "notable_event_comment",
+	// 	restKeyField:  "_key",
+	// 	tfIDField:     "title",
+	// 	restInterface: "event_management_interface",
+	// },
 }
 
 type Base struct {
