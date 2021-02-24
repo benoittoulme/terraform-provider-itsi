@@ -1,6 +1,7 @@
 package models
 
 import (
+	"bufio"
 	"bytes"
 	"crypto/tls"
 	"encoding/json"
@@ -9,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"sort"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 )
@@ -23,118 +25,136 @@ func init() {
 }
 
 type restConfig struct {
-	objectType    string
-	restKeyField  string
-	tfIDField     string
-	restInterface string
+	objectType      string
+	restKeyField    string
+	tfIDField       string
+	restInterface   string
+	TemplateMarshal func(b *Base) (string, error)
 }
 
 var RestConfigs = map[string]restConfig{
 	// backup_restore_interface
 	"backup_restore": {
-		objectType:    "backup_restore",
-		restKeyField:  "_key",
-		tfIDField:     "_key",
-		restInterface: "backup_restore_interface",
+		objectType:      "backup_restore",
+		restKeyField:    "_key",
+		tfIDField:       "_key",
+		restInterface:   "backup_restore_interface",
+		TemplateMarshal: NilTemplateMarshal,
 	},
 	// itoa_interface
 	"team": {
-		objectType:    "team",
-		restKeyField:  "_key",
-		tfIDField:     "title",
-		restInterface: "itoa_interface",
+		objectType:      "team",
+		restKeyField:    "_key",
+		tfIDField:       "title",
+		restInterface:   "itoa_interface",
+		TemplateMarshal: NilTemplateMarshal,
 	},
 	"entity": {
-		objectType:    "entity",
-		restKeyField:  "_key",
-		tfIDField:     "_key",
-		restInterface: "itoa_interface",
+		objectType:      "entity",
+		restKeyField:    "_key",
+		tfIDField:       "_key",
+		restInterface:   "itoa_interface",
+		TemplateMarshal: NilTemplateMarshal,
 	},
 	"service": {
-		objectType:    "service",
-		restKeyField:  "_key",
-		tfIDField:     "title",
-		restInterface: "itoa_interface",
+		objectType:      "service",
+		restKeyField:    "_key",
+		tfIDField:       "title",
+		restInterface:   "itoa_interface",
+		TemplateMarshal: NilTemplateMarshal,
 	},
 	"base_service_template": {
-		objectType:    "base_service_template",
-		restKeyField:  "_key",
-		tfIDField:     "title",
-		restInterface: "itoa_interface",
+		objectType:      "base_service_template",
+		restKeyField:    "_key",
+		tfIDField:       "title",
+		restInterface:   "itoa_interface",
+		TemplateMarshal: NilTemplateMarshal,
 	},
 	"kpi_base_search": {
-		objectType:    "kpi_base_search",
-		restKeyField:  "_key",
-		tfIDField:     "title",
-		restInterface: "itoa_interface",
+		objectType:      "kpi_base_search",
+		restKeyField:    "_key",
+		tfIDField:       "title",
+		restInterface:   "itoa_interface",
+		TemplateMarshal: NilTemplateMarshal,
 	},
 	"deep_dive": {
-		objectType:    "deep_dive",
-		restKeyField:  "_key",
-		tfIDField:     "title",
-		restInterface: "itoa_interface",
+		objectType:      "deep_dive",
+		restKeyField:    "_key",
+		tfIDField:       "title",
+		restInterface:   "itoa_interface",
+		TemplateMarshal: NilTemplateMarshal,
 	},
 	"glass_table": {
-		objectType:    "glass_table",
-		restKeyField:  "_key",
-		tfIDField:     "_key",
-		restInterface: "itoa_interface",
+		objectType:      "glass_table",
+		restKeyField:    "_key",
+		tfIDField:       "_key",
+		restInterface:   "itoa_interface",
+		TemplateMarshal: NilTemplateMarshal,
 	},
 	"home_view": {
-		objectType:    "home_view",
-		restKeyField:  "_key",
-		tfIDField:     "title",
-		restInterface: "itoa_interface",
+		objectType:      "home_view",
+		restKeyField:    "_key",
+		tfIDField:       "title",
+		restInterface:   "itoa_interface",
+		TemplateMarshal: NilTemplateMarshal,
 	},
 	"kpi_template": {
-		objectType:    "kpi_template",
-		restKeyField:  "_key",
-		tfIDField:     "title",
-		restInterface: "itoa_interface",
+		objectType:      "kpi_template",
+		restKeyField:    "_key",
+		tfIDField:       "title",
+		restInterface:   "itoa_interface",
+		TemplateMarshal: NilTemplateMarshal,
 	},
 	"kpi_threshold_template": {
-		objectType:    "kpi_threshold_template",
-		restKeyField:  "_key",
-		tfIDField:     "title",
-		restInterface: "itoa_interface",
+		objectType:      "kpi_threshold_template",
+		restKeyField:    "_key",
+		tfIDField:       "title",
+		restInterface:   "itoa_interface",
+		TemplateMarshal: ThresholdTemplateMarshal,
 	},
 	"event_management_state": {
-		objectType:    "event_management_state",
-		restKeyField:  "_key",
-		tfIDField:     "title",
-		restInterface: "itoa_interface",
+		objectType:      "event_management_state",
+		restKeyField:    "_key",
+		tfIDField:       "title",
+		restInterface:   "itoa_interface",
+		TemplateMarshal: NilTemplateMarshal,
 	},
 	"entity_relationship": {
-		objectType:    "entity",
-		restKeyField:  "_key",
-		tfIDField:     "_key",
-		restInterface: "itoa_interface",
+		objectType:      "entity",
+		restKeyField:    "_key",
+		tfIDField:       "_key",
+		restInterface:   "itoa_interface",
+		TemplateMarshal: NilTemplateMarshal,
 	},
 	"entity_relationship_rule": {
-		objectType:    "entity",
-		restKeyField:  "_key",
-		tfIDField:     "_key",
-		restInterface: "itoa_interface",
+		objectType:      "entity",
+		restKeyField:    "_key",
+		tfIDField:       "_key",
+		restInterface:   "itoa_interface",
+		TemplateMarshal: NilTemplateMarshal,
 	},
 	// event_management_interface
 	"notable_event_aggregation_policy": {
-		objectType:    "notable_event_aggregation_policy",
-		restKeyField:  "_key",
-		tfIDField:     "title",
-		restInterface: "event_management_interface",
+		objectType:      "notable_event_aggregation_policy",
+		restKeyField:    "_key",
+		tfIDField:       "title",
+		restInterface:   "event_management_interface",
+		TemplateMarshal: NilTemplateMarshal,
 	},
 	"correlation_search": {
-		objectType:    "correlation_search",
-		restKeyField:  "name",
-		tfIDField:     "name",
-		restInterface: "event_management_interface",
+		objectType:      "correlation_search",
+		restKeyField:    "name",
+		tfIDField:       "name",
+		restInterface:   "event_management_interface",
+		TemplateMarshal: NilTemplateMarshal,
 	},
 
 	"notable_event_group": {
-		objectType:    "notable_event_group",
-		restKeyField:  "_key",
-		tfIDField:     "_key",
-		restInterface: "event_management_interface",
+		objectType:      "notable_event_group",
+		restKeyField:    "_key",
+		tfIDField:       "_key",
+		restInterface:   "event_management_interface",
+		TemplateMarshal: NilTemplateMarshal,
 	},
 	// notable_event_comment does not support bulk get
 	// "notable_event_comment": {
@@ -537,16 +557,22 @@ func (b *Base) Populate(raw []byte) error {
 }
 
 func (b *Base) AuditLog(items []*Base, auditList []string, format string) error {
-	err := os.MkdirAll("dump", os.ModePerm)
+	err := os.MkdirAll(format, os.ModePerm)
 	if err != nil {
 		return err
 	}
-	filename := fmt.Sprintf("dump/%s.%s", b.objectType, format)
+	err = os.MkdirAll("tf", os.ModePerm)
+	if err != nil {
+		return err
+	}
+	filename := fmt.Sprintf("%s/%s.%s", format, b.objectType, format)
 	objects := []interface{}{}
 	auditMap := map[string]bool{}
 	for _, f := range auditList {
 		auditMap[f] = true
 	}
+	tfFilename := fmt.Sprintf("tf/%s.tf", b.objectType)
+	tfobjects := []string{}
 	for _, item := range items {
 		by, err := json.Marshal(item.RawJson)
 		if err != nil {
@@ -574,6 +600,13 @@ func (b *Base) AuditLog(items []*Base, auditList []string, format string) error 
 			return err
 		}
 		objects = append(objects, i)
+		blob, err := item.restConfig.TemplateMarshal(item)
+		if err != nil {
+			return err
+		}
+		if blob != "" {
+			tfobjects = append(tfobjects, blob)
+		}
 	}
 	var by []byte
 	switch format {
@@ -585,7 +618,24 @@ func (b *Base) AuditLog(items []*Base, auditList []string, format string) error 
 	if err != nil {
 		return err
 	}
-	return ioutil.WriteFile(filename, by, 0644)
+	err = ioutil.WriteFile(filename, by, 0644)
+	if err != nil {
+		return err
+	}
+	if len(tfobjects) > 0 {
+		f, err := os.Create(tfFilename)
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+		w := bufio.NewWriter(f)
+		_, err = w.WriteString(strings.Join(tfobjects, "\n"))
+		if err != nil {
+			return err
+		}
+		w.Flush()
+	}
+	return nil
 }
 
 func (b *Base) AuditFields(items []*Base) error {

@@ -1,5 +1,8 @@
 /bin
-/dump
+/out
+/yaml
+/json
+/tf
 /fields
 .DS_Store
 pkg
