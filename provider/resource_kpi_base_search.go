@@ -30,7 +30,6 @@ func resourceKPIBaseSearch() *schema.Resource {
 			"title": {
 				Type:     schema.TypeString,
 				Required: true,
-				ForceNew: true,
 			},
 			"description": {
 				Type:     schema.TypeString,
@@ -78,8 +77,9 @@ func resourceKPIBaseSearch() *schema.Resource {
 				Required: true,
 			},
 			"is_first_time_save_done": {
-				Type:     schema.TypeBool,
-				Required: true,
+				Type:         schema.TypeBool,
+				Optional:     true,
+				InputDefault: "false",
 			},
 
 			"metric_qualifier": {

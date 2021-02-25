@@ -75,7 +75,7 @@ var RestConfigs = map[string]restConfig{
 		restKeyField:    "_key",
 		tfIDField:       "title",
 		restInterface:   "itoa_interface",
-		TemplateMarshal: NilTemplateMarshal,
+		TemplateMarshal: KPIBaseSearchMarshal,
 	},
 	"deep_dive": {
 		objectType:      "deep_dive",
@@ -449,6 +449,15 @@ func (b *Base) deleteCache() {
 }
 
 func (b *Base) Find(user, password, host string, port int) (*Base, error) {
+	if b.RESTKey != "" {
+		b_, err := b.Read(user, password, host, port)
+		if err != nil {
+			return nil, err
+		}
+		if b_ != nil {
+			return b_, nil
+		}
+	}
 	b_ := b.getCache()
 	if b_ != nil {
 		return b_, nil

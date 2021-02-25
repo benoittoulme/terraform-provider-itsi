@@ -3,9 +3,9 @@ package models
 import (
 	"bytes"
 	"encoding/json"
-	"html/template"
 	"regexp"
 	"strings"
+	"text/template"
 )
 
 func NilTemplateMarshal(b *Base) (string, error) {
@@ -25,6 +25,73 @@ func tfname(name string) (string, error) {
 		name = name[1:]
 	}
 	return name, nil
+}
+
+func KPIBaseSearchMarshal(b *Base) (string, error) {
+	format := `
+	resource "itsi_kpi_base_search" "{{.tfname}}" {
+		title                         = "{{.title}}"
+		actions                       = "{{.actions}}"
+		alert_lag                     = "{{.alert_lag}}"
+		alert_period                  = "{{.alert_period}}"
+		base_search                   = <<-EOF
+		{{.base_search}}
+		EOF
+		description                   = "{{.description}}"
+		{{if .entity_alias_filtering_fields}}entity_alias_filtering_fields =  {{.entity_alias_filtering_fields}}{{end}}
+		entity_breakdown_id_fields    = "{{.entity_breakdown_id_fields}}"
+		entity_id_fields              = "{{.entity_id_fields}}"
+		identifying_name              = "{{.identifying_name}}"
+		is_entity_breakdown           =  {{.is_entity_breakdown}}
+		is_service_entity_filter      =  {{.is_service_entity_filter}}
+		{{if .is_first_time_save_done}}is_first_time_save_done       =  {{.is_first_time_save_done}}{{end}}
+		metric_qualifier              = "{{.metric_qualifier}}"
+		{{range $index, $element := .metrics}}{{ with $element }}
+		metrics {
+			aggregate_statop         = "{{.aggregate_statop}}"
+			entity_statop            = "{{.entity_statop}}"
+			fill_gaps                = "{{.fill_gaps}}"
+			gap_custom_alert_value   = "{{.gap_custom_alert_value}}"
+			gap_severity             = "{{.gap_severity}}"
+			gap_severity_color       = "{{.gap_severity_color}}"
+			gap_severity_color_light = "{{.gap_severity_color_light}}"
+			gap_severity_value       = "{{.gap_severity_value}}"
+			threshold_field          = "{{.threshold_field}}"
+			title                    = "{{.title}}"
+			unit                     = "{{.unit}}"
+		}
+		{{end}}{{end}}
+	  search_alert_earliest = "{{.search_alert_earliest}}"
+	  sec_grp               = "{{.sec_grp}}"
+	  source_itsi_da        = "{{.source_itsi_da}}"
+	}
+	
+`
+	tmpl, err := template.New("test").Parse(format)
+	if err != nil {
+		return "", err
+	}
+
+	m := map[string]interface{}{}
+	by, err := b.RawJson.MarshalJSON()
+	if err != nil {
+		return "", err
+	}
+	if err := json.Unmarshal(by, &m); err != nil {
+		return "", err
+	}
+	tfName, err := tfname(m["title"].(string))
+	if err != nil {
+		return "", err
+	}
+	m["tfname"] = tfName
+
+	var tpl bytes.Buffer
+	err = tmpl.Execute(&tpl, m)
+	if err != nil {
+		return "", err
+	}
+	return tpl.String(), nil
 }
 
 func ThresholdTemplateMarshal(b *Base) (string, error) {
